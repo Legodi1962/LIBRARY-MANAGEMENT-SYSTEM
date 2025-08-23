@@ -6,6 +6,8 @@ using System.Text.RegularExpressions;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+using BCrypt.Net;
+
 
 namespace BOKAMOSO_CONNECT_LIBRARY_SYSTEM
 {
@@ -46,9 +48,58 @@ namespace BOKAMOSO_CONNECT_LIBRARY_SYSTEM
                 ShowMessage("Password must be at least 8 characters with uppercase, lowercase, number, and special character.", false);
                 return;
             }
+
+            string connectionString = " ";
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                   conn.Open();
+                    string query = "SELECT Password FROM Users WHERE UserID = @UserID";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@UserID", txtLibraryNumber.Text);
+                        string storedHash = (string)cmd.ExecuteScalar();
+
+                        if (storedHash == null || !BCrypt.Net.BCrypt.Verify(txtCurrent.Text, storedHash))
+                        {
+                            ShowMessage("Invalid library number or current password.", false);
+                            return;
+                        }
+                    }
+
+                    // Update password (hashed)
+                    string newPasswordHash = BCrypt.Net.BCrypt.HashPassword(txtNew.Text);
+                    string updateQuery = "UPDATE Users SET Password = @NewPassword WHERE LibraryNumber = @LibraryNumber";
+
+                    using (SqlCommand cmd = new SqlCommand(updateQuery, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@NewPassword", newPasswordHash);
+                        cmd.Parameters.AddWithValue("@UserID", txtLibraryNumber.Text);
+                        int rows = cmd.ExecuteNonQuery();
+                        if (rows > 0)
+                        {
+                            ShowMessage("Password reset successfully!", true);
+                        }
+                        else
+                        {
+                            ShowMessage("Failed to update password.", false);
+                        }
+                    }
+
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+                lblMessage.Text = "An error occured:" + ex.Message;
+            }
         }
 
-              
+        
+        
 
         private bool IsPasswordValid(string password)
         {

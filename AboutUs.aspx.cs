@@ -16,7 +16,7 @@ namespace BOKAMOSO_CONNECT_LIBRARY_SYSTEM
 
         protected void btnExperience_Click(object sender, EventArgs e)
         {
-            Response.Redirect("Login.aspx");
+            Response.Redirect("DefaultPage.aspx");
         }
 
         protected void btnStart_Click(object sender, EventArgs e)
